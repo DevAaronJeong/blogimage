@@ -2,83 +2,218 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>GitHub 이미지 URL 미리보기</title>
+  <title>GitHub 이미지 주소 & 미리보기 생성기</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    :root {
+      --bg: #fffaf5;
+      --text: #3c2b2b;
+      --box: #f4f4f4;
+      --border: #ccc;
+    }
+
+    body.dark {
+      --bg: #1d1c1a;
+      --text: #f8f5f0;
+      --box: #2d2d2d;
+      --border: #444;
+    }
+
     body {
       font-family: 'Pretendard', sans-serif;
-      background: #fffaf5;
-      color: #3c2b2b;
+      background: var(--bg);
+      color: var(--text);
       padding: 2rem;
-      max-width: 600px;
+      max-width: 720px;
       margin: auto;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     h1 {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
       text-align: center;
+    }
+
+    label, h2 {
+      font-weight: bold;
+      margin-top: 2rem;
+      display: block;
     }
 
     input {
       width: 100%;
       padding: 10px;
-      margin: 10px 0 20px;
+      margin: 10px 0 16px;
       font-size: 14px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
       border-radius: 8px;
+      background: var(--box);
+      color: var(--text);
     }
 
-    .preview {
-      text-align: center;
-      margin-top: 20px;
+    .output-box {
+      background: var(--box);
+      padding: 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      word-break: break-word;
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .copy-btn {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      background: #bbb;
+      border: none;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      cursor: pointer;
     }
 
     .preview img {
       max-width: 100%;
       border-radius: 12px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+      margin-top: 20px;
     }
 
-    .url-display {
-      background: #f4f4f4;
-      padding: 10px;
+    .gallery {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .gallery-item {
+      background: var(--box);
+      padding: 8px;
+      border-radius: 12px;
+      text-align: center;
       font-size: 13px;
-      border-radius: 6px;
-      word-break: break-all;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      max-height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .toggle-mode {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .toggle-mode button {
+      background: #555;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 13px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>🖼️ GitHub 이미지 URL 미리보기</h1>
+  <h1>🖼️ GitHub 이미지 주소 & 미리보기 생성기</h1>
 
-  <label for="filename">파일 이름 입력 (예: <code>impressionism-series-cover.png</code>)</label>
+  <div class="toggle-mode">
+    <button onclick="toggleTheme()">🌓 다크모드 전환</button>
+  </div>
+
+  <label for="filename">파일 이름 입력 (예: example.png)</label>
   <input type="text" id="filename" placeholder="파일명을 입력하세요..." />
 
-  <div class="url-display" id="url"></div>
+  <div class="output-box" id="url-box">
+    <button class="copy-btn" onclick="copyToClipboard('url-box')">복사</button>
+    <code id="url"></code>
+  </div>
+
+  <div class="output-box" id="img-tag-box">
+    <button class="copy-btn" onclick="copyToClipboard('img-tag-box')">복사</button>
+    <code id="img-tag"></code>
+  </div>
+
+  <div class="output-box" id="figure-tag-box">
+    <button class="copy-btn" onclick="copyToClipboard('figure-tag-box')">복사</button>
+    <code id="figure-tag"></code>
+  </div>
 
   <div class="preview" id="preview"></div>
+
+  <h2>📂 최근 업로드된 이미지</h2>
+  <div class="gallery" id="gallery"></div>
 
   <script>
     const username = "DevAaronJeong";
     const repo = "blogimage";
     const branch = "main";
 
+    const files = [
+      "impressionism-series-cover.png",
+      "insta-card.png",
+      "insta-card2.webp",
+      "investment-card.png",
+      "investment-card2.png",
+      "poster-kumho.png"
+    ];
+
     const filenameInput = document.getElementById("filename");
     const urlDisplay = document.getElementById("url");
+    const urlBox = document.getElementById("url-box");
+    const imgTag = document.getElementById("img-tag");
+    const imgTagBox = document.getElementById("img-tag-box");
+    const figureTag = document.getElementById("figure-tag");
+    const figureTagBox = document.getElementById("figure-tag-box");
     const preview = document.getElementById("preview");
+    const gallery = document.getElementById("gallery");
 
     filenameInput.addEventListener("input", () => {
       const filename = filenameInput.value.trim();
       if (!filename) {
         urlDisplay.textContent = "";
+        imgTag.textContent = "";
+        figureTag.textContent = "";
         preview.innerHTML = "";
         return;
       }
 
       const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${filename}`;
       urlDisplay.textContent = url;
+      imgTag.textContent = `<img src="${url}" alt="">`;
+      figureTag.textContent = `<figure>\n  <img src="${url}" alt="">\n  <figcaption>${filename}</figcaption>\n</figure>`;
       preview.innerHTML = `<img src="${url}" alt="미리보기 이미지">`;
+    });
+
+    function copyToClipboard(id) {
+      const code = document.querySelector(`#${id} code`).textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        alert("복사되었습니다!");
+      });
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+    }
+
+    // 최근 이미지 썸네일 표시
+    files.forEach(file => {
+      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${file}`;
+      const item = document.createElement("div");
+      item.className = "gallery-item";
+      item.innerHTML = `
+        <a href="${url}" target="_blank">
+          <img src="${url}" alt="${file}" />
+        </a>
+        ${file}
+      `;
+      gallery.appendChild(item);
     });
   </script>
 </body>
