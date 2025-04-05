@@ -154,6 +154,7 @@
     const username = "DevAaronJeong";
     const repo = "blogimage";
     const branch = "main";
+    const folder = "images/";
 
     const files = [
       "impressionism-series-cover.png",
@@ -184,7 +185,8 @@
         return;
       }
 
-      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${filename}`;
+      const relativePath = folder + filename;
+      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${relativePath}`;
       urlDisplay.textContent = url;
       imgTag.textContent = `<img src="${url}" alt="">`;
       figureTag.textContent = `<figure>\n  <img src="${url}" alt="">\n  <figcaption>${filename}</figcaption>\n</figure>`;
@@ -202,16 +204,26 @@
       document.body.classList.toggle("dark");
     }
 
-    // 최근 이미지 썸네일 표시
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`복사됨: ${text}`);
+      });
+    }
+
+    // 갤러리 렌더링
     files.forEach(file => {
-      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${file}`;
+      const relativeFile = folder + file;
+      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${relativeFile}`;
       const item = document.createElement("div");
       item.className = "gallery-item";
       item.innerHTML = `
         <a href="${url}" target="_blank">
           <img src="${url}" alt="${file}" />
         </a>
-        ${file}
+        <div>
+          ${file}
+          <button style="margin-left:6px; font-size:12px; padding:2px 6px; border:none; background:#ddd; border-radius:6px; cursor:pointer;" onclick="copyText('${file}')">복사</button>
+        </div>
       `;
       gallery.appendChild(item);
     });
