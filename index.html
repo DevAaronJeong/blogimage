@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>GitHub 이미지 URL 미리보기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: #fffaf5;
+      color: #3c2b2b;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .preview {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .preview img {
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    }
+
+    .url-display {
+      background: #f4f4f4;
+      padding: 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <h1>🖼️ GitHub 이미지 URL 미리보기</h1>
+
+  <label for="filename">파일 이름 입력 (예: <code>impressionism-series-cover.png</code>)</label>
+  <input type="text" id="filename" placeholder="파일명을 입력하세요..." />
+
+  <div class="url-display" id="url"></div>
+
+  <div class="preview" id="preview"></div>
+
+  <script>
+    const username = "DevAaronJeong";
+    const repo = "blogimage";
+    const branch = "main";
+
+    const filenameInput = document.getElementById("filename");
+    const urlDisplay = document.getElementById("url");
+    const preview = document.getElementById("preview");
+
+    filenameInput.addEventListener("input", () => {
+      const filename = filenameInput.value.trim();
+      if (!filename) {
+        urlDisplay.textContent = "";
+        preview.innerHTML = "";
+        return;
+      }
+
+      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${filename}`;
+      urlDisplay.textContent = url;
+      preview.innerHTML = `<img src="${url}" alt="미리보기 이미지">`;
+    });
+  </script>
+</body>
+</html>
