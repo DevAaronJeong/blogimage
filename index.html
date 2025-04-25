@@ -228,5 +228,37 @@
       gallery.appendChild(item);
     });
   </script>
+
+  <input type="file" id="uploadFile" />
+
+<script>
+document.getElementById('uploadFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result;
+
+    const res = await fetch('https://your-worker-subdomain.workers.dev/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: file.name,
+        contentBase64: base64,
+      }),
+    });
+
+    const json = await res.json();
+    if (json.success) {
+      alert(`업로드 성공!\n${json.url}`);
+    } else {
+      alert(`업로드 실패: ${JSON.stringify(json)}`);
+    }
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+
 </body>
 </html>
