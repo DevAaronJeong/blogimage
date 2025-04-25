@@ -2,263 +2,102 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>GitHub 이미지 주소 & 미리보기 생성기</title>
+  <title>GitHub 이미지 업로드 & 미리보기</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --bg: #fffaf5;
-      --text: #3c2b2b;
-      --box: #f4f4f4;
-      --border: #ccc;
-    }
-
-    body.dark {
-      --bg: #1d1c1a;
-      --text: #f8f5f0;
-      --box: #2d2d2d;
-      --border: #444;
-    }
-
     body {
       font-family: 'Pretendard', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: #fffaf5;
+      color: #333;
       padding: 2rem;
       max-width: 720px;
       margin: auto;
-      transition: background 0.3s ease, color 0.3s ease;
     }
-
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
-    label, h2 {
-      font-weight: bold;
-      margin-top: 2rem;
-      display: block;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0 16px;
-      font-size: 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--box);
-      color: var(--text);
-    }
-
-    .output-box {
-      background: var(--box);
-      padding: 10px;
-      font-size: 13px;
-      border-radius: 6px;
-      word-break: break-word;
-      position: relative;
-      margin-bottom: 12px;
-    }
-
-    .copy-btn {
-      position: absolute;
-      right: 8px;
-      top: 8px;
-      background: #bbb;
-      border: none;
-      font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .preview img {
-      max-width: 100%;
-      border-radius: 12px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-      margin-top: 20px;
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 24px;
-    }
-
-    .gallery-item {
-      background: var(--box);
-      padding: 8px;
-      border-radius: 12px;
-      text-align: center;
-      font-size: 13px;
-    }
-
-    .gallery-item img {
-      width: 100%;
-      max-height: 140px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-
-    .toggle-mode {
-      text-align: center;
+    input[type="file"] {
       margin-top: 1rem;
     }
-
-    .toggle-mode button {
-      background: #555;
-      color: #fff;
-      padding: 6px 12px;
-      font-size: 13px;
+    .result {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f4f4f4;
+      border-radius: 8px;
+    }
+    .result img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-top: 1rem;
+    }
+    button {
+      margin-top: 1rem;
+      background: #444;
+      color: white;
       border: none;
+      padding: 10px 14px;
+      font-size: 14px;
       border-radius: 8px;
       cursor: pointer;
+    }
+    code {
+      background: #eee;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <h1>🖼️ GitHub 이미지 주소 & 미리보기 생성기</h1>
+  <h1>📤 GitHub 이미지 업로드 도구</h1>
+  <p>이미지를 선택하면 자동으로 <code>DevAaronJeong/isg/images/</code> 경로로 업로드됩니다.</p>
+  <input type="file" id="fileInput" accept="image/*" />
 
-  <div class="toggle-mode">
-    <button onclick="toggleTheme()">🌓 다크모드 전환</button>
+  <div class="result" id="result" style="display:none;">
+    <strong>✅ 업로드 성공!</strong><br/>
+    이미지 주소: <code id="imgUrl"></code><br/>
+    <button onclick="copyUrl()">URL 복사</button>
+    <div><img id="preview" alt="업로드된 이미지" /></div>
   </div>
-
-  <label for="filename">파일 이름 입력 (예: example.png)</label>
-  <input type="text" id="filename" placeholder="파일명을 입력하세요..." />
-
-  <div class="output-box" id="url-box">
-    <button class="copy-btn" onclick="copyToClipboard('url-box')">복사</button>
-    <code id="url"></code>
-  </div>
-
-  <div class="output-box" id="img-tag-box">
-    <button class="copy-btn" onclick="copyToClipboard('img-tag-box')">복사</button>
-    <code id="img-tag"></code>
-  </div>
-
-  <div class="output-box" id="figure-tag-box">
-    <button class="copy-btn" onclick="copyToClipboard('figure-tag-box')">복사</button>
-    <code id="figure-tag"></code>
-  </div>
-
-  <div class="preview" id="preview"></div>
-
-  <h2>📂 최근 업로드된 이미지</h2>
-  <div class="gallery" id="gallery"></div>
 
   <script>
-    const username = "DevAaronJeong";
-    const repo = "blogimage";
-    const branch = "main";
-    const folder = "images/";
-
-    const files = [
-      "impressionism-series-cover.png",
-      "insta-card.png",
-      "insta-card2.webp",
-      "investment-card.png",
-      "investment-card2.png",
-      "poster-kumho.png"
-    ];
-
-    const filenameInput = document.getElementById("filename");
-    const urlDisplay = document.getElementById("url");
-    const urlBox = document.getElementById("url-box");
-    const imgTag = document.getElementById("img-tag");
-    const imgTagBox = document.getElementById("img-tag-box");
-    const figureTag = document.getElementById("figure-tag");
-    const figureTagBox = document.getElementById("figure-tag-box");
+    const fileInput = document.getElementById("fileInput");
+    const resultBox = document.getElementById("result");
+    const imgUrl = document.getElementById("imgUrl");
     const preview = document.getElementById("preview");
-    const gallery = document.getElementById("gallery");
 
-    filenameInput.addEventListener("input", () => {
-      const filename = filenameInput.value.trim();
-      if (!filename) {
-        urlDisplay.textContent = "";
-        imgTag.textContent = "";
-        figureTag.textContent = "";
-        preview.innerHTML = "";
-        return;
-      }
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
 
-      const relativePath = folder + filename;
-      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${relativePath}`;
-      urlDisplay.textContent = url;
-      imgTag.textContent = `<img src="${url}" alt="">`;
-      figureTag.textContent = `<figure>\n  <img src="${url}" alt="">\n  <figcaption>${filename}</figcaption>\n</figure>`;
-      preview.innerHTML = `<img src="${url}" alt="미리보기 이미지">`;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result;
+
+        const res = await fetch("https://isg-awe.pages.dev/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: file.name,
+            contentBase64: base64
+          })
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          imgUrl.textContent = json.url;
+          preview.src = json.url;
+          resultBox.style.display = "block";
+        } else {
+          alert("업로드 실패: " + JSON.stringify(json));
+        }
+      };
+      reader.readAsDataURL(file);
     });
 
-    function copyToClipboard(id) {
-      const code = document.querySelector(`#${id} code`).textContent;
-      navigator.clipboard.writeText(code).then(() => {
-        alert("복사되었습니다!");
-      });
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
-    }
-
-    function copyText(text) {
+    function copyUrl() {
+      const text = imgUrl.textContent;
       navigator.clipboard.writeText(text).then(() => {
-        alert(`복사됨: ${text}`);
+        alert("이미지 주소가 복사되었습니다!");
       });
     }
-
-    // 갤러리 렌더링
-    files.forEach(file => {
-      const relativeFile = folder + file;
-      const url = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${relativeFile}`;
-      const item = document.createElement("div");
-      item.className = "gallery-item";
-      item.innerHTML = `
-        <a href="${url}" target="_blank">
-          <img src="${url}" alt="${file}" />
-        </a>
-        <div>
-          ${file}
-          <button style="margin-left:6px; font-size:12px; padding:2px 6px; border:none; background:#ddd; border-radius:6px; cursor:pointer;" onclick="copyText('${file}')">복사</button>
-        </div>
-      `;
-      gallery.appendChild(item);
-    });
   </script>
-
-  <input type="file" id="uploadFile" />
-
-<script>
-document.getElementById('uploadFile').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const base64 = reader.result;
-
-    const res = await fetch('https://your-worker-subdomain.workers.dev/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: file.name,
-        contentBase64: base64,
-      }),
-    });
-
-    const json = await res.json();
-    if (json.success) {
-      alert(`업로드 성공!\n${json.url}`);
-    } else {
-      alert(`업로드 실패: ${JSON.stringify(json)}`);
-    }
-  };
-  reader.readAsDataURL(file);
-});
-</script>
-
 </body>
 </html>
