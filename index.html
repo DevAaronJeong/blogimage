@@ -122,12 +122,17 @@
       });
 
       const json = await res.json();
+      console.log("[응답 결과]", json); // 콘솔에 결과 출력
+
       if (json.success) {
         imgUrl.textContent = json.url;
         uploadedImage.src = json.url;
         resultBox.style.display = "block";
       } else {
-        alert("업로드 실패: " + JSON.stringify(json));
+        alert(`업로드 실패!
+Status: ${json.status}
+Message: ${json.statusText}
+Detail: ${json.error}`);
       }
 
       uploadBtn.textContent = "업로드";
