@@ -16,6 +16,20 @@
     input[type="file"] {
       margin-top: 1rem;
     }
+    #uploadBtn {
+      margin-top: 1rem;
+      background: #222;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #uploadBtn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
     .result {
       margin-top: 2rem;
       padding: 1rem;
@@ -47,49 +61,77 @@
 </head>
 <body>
   <h1>📤 GitHub 이미지 업로드 도구</h1>
-  <p>이미지를 선택하면 자동으로 <code>DevAaronJeong/isg/images/</code> 경로로 업로드됩니다.</p>
+  <p>이미지를 선택하면 미리보기가 나오고, 업로드 버튼으로 <code>DevAaronJeong/isg/images/</code> 경로에 업로드됩니다.</p>
+
   <input type="file" id="fileInput" accept="image/*" />
+  <br/>
+  <img id="preview" alt="미리보기" style="display:none; margin-top:1rem; max-width:100%; border-radius:12px;" />
+  <br/>
+  <button id="uploadBtn" disabled>업로드</button>
 
   <div class="result" id="result" style="display:none;">
     <strong>✅ 업로드 성공!</strong><br/>
     이미지 주소: <code id="imgUrl"></code><br/>
     <button onclick="copyUrl()">URL 복사</button>
-    <div><img id="preview" alt="업로드된 이미지" /></div>
+    <div><img id="uploadedImage" alt="업로드된 이미지" /></div>
   </div>
 
   <script>
     const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
     const resultBox = document.getElementById("result");
     const imgUrl = document.getElementById("imgUrl");
     const preview = document.getElementById("preview");
+    const uploadedImage = document.getElementById("uploadedImage");
 
-    fileInput.addEventListener("change", async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
+    let selectedFile = null;
+    let base64 = "";
+
+    fileInput.addEventListener("change", () => {
+      selectedFile = fileInput.files[0];
+      if (!selectedFile) {
+        uploadBtn.disabled = true;
+        preview.style.display = "none";
+        return;
+      }
 
       const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result;
-
-        const res = await fetch("https://isg-awe.pages.dev/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            contentBase64: base64
-          })
-        });
-
-        const json = await res.json();
-        if (json.success) {
-          imgUrl.textContent = json.url;
-          preview.src = json.url;
-          resultBox.style.display = "block";
-        } else {
-          alert("업로드 실패: " + JSON.stringify(json));
-        }
+      reader.onload = () => {
+        base64 = reader.result;
+        preview.src = base64;
+        preview.style.display = "block";
+        resultBox.style.display = "none";
+        uploadBtn.disabled = false;
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      if (!selectedFile || !base64) return;
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "업로드 중...";
+
+      const res = await fetch("https://isg-awe.pages.dev/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: selectedFile.name,
+          contentBase64: base64
+        })
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        imgUrl.textContent = json.url;
+        uploadedImage.src = json.url;
+        resultBox.style.display = "block";
+      } else {
+        alert("업로드 실패: " + JSON.stringify(json));
+      }
+
+      uploadBtn.textContent = "업로드";
+      uploadBtn.disabled = false;
     });
 
     function copyUrl() {
